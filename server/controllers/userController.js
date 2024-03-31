@@ -70,10 +70,20 @@ export const loginController = async (req,res) =>{
                 message: 'invalid credentials'
             });
         }
-        res.status(200).send({
+        //token
+        const token = user.generateToken();
+        res.status(200).cookie("token",token,{
+            expires: new Date(Date.now()+ 3 * 24 * 60 * 1000),
+            httpOnly: process.env.NODE_ENV === "development"?true:false,
+            // secure : process.env.NODE_ENV === "development"?true:false,
+            sameSite : process.env.NODE_ENV === "development"?true:false
+            
+            
+        }).send({
             success:true,
             message: 'Login successfull',
-            user
+            user,
+            token
         });
     }catch(error){
         console.log(error);
@@ -84,3 +94,4 @@ export const loginController = async (req,res) =>{
         });
     }
 };
+

@@ -11,5 +11,7 @@ router.post('/register', registerController);
 //login
 router.post('/login',loginController);
 
+//profile
+
 //export
 export default router;
