@@ -1,4 +1,52 @@
 import userModel from "../models/userModel.js";
+import nodemailer from 'nodemailer';
+import { v4 as uuidv4 } from 'uuid';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+//verification functions
+
+const vemail = process.env.VERIFY_EMAIL;
+const vpass = process.env.VERIFY_PASS;
+//Creating transporter for nodemailer
+const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+      user: process.env.VERIFY_EMAIL,
+      pass: process.env.VERIFY_PASS
+    }
+  });
+
+// Generate a unique verification token
+function generateVerificationToken() {
+    return uuidv4();
+  }
+
+  // Send verification email
+function sendVerificationEmail(email, token) {
+    const mailOptions = {
+      from: 'crentverify@gmail.com',
+      to: email,
+      subject: 'Email Verification',
+      html: `
+        <p>Click the following link to verify your email:</p>
+        <a href="http://localhost:${process.env.PORT}/api/v1/user/verify?token=${token}">Verify Email</a>
+      `
+    };
+  
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending verification email:', error);
+      } else {
+        console.log('Verification email sent:', info.response);
+      }
+    });
+  }
+
+
+
+
 export const registerController = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
