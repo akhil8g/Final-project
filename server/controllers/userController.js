@@ -1,12 +1,11 @@
 import userModel from "../models/userModel.js";
 import nodemailer from 'nodemailer';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4} from 'uuid';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 //verification functions
-
 const vemail = process.env.VERIFY_EMAIL;
 const vpass = process.env.VERIFY_PASS;
 //Creating transporter for nodemailer
@@ -26,7 +25,7 @@ function generateVerificationToken() {
   // Send verification email
 function sendVerificationEmail(email, token) {
     const mailOptions = {
-      from: 'crentverify@gmail.com',
+      from: process.env.VERIFY_EMAIL,
       to: email,
       subject: 'Email Verification',
       html: `
@@ -67,12 +66,21 @@ export const registerController = async (req, res) => {
         });
     }
 
+    // Generate verification token
+    const token = generateVerificationToken();
+
+    // Send verification email
+    await sendVerificationEmail(email, token);
+
     const user = await userModel.create({ 
         name, 
         email, 
         password, 
-        phone 
+        phone,
+        verificationToken:token,
+        verified: false
     });
+    console.log(user);
     res.status(200).send({
         success:true,
         message:'Registration success, please login',
@@ -87,6 +95,28 @@ export const registerController = async (req, res) => {
     });
   }
 };
+
+export const verifyUserController = (req,res) => {
+    const token1 = req.query.token;
+  // Here you would validate the token against your database
+  // Example: Validate against MongoDB
+  // Replace this with your actual database logic
+  userModel.findOneAndUpdate(
+    { verificationToken: token1 },
+    { verified: true, verificationToken: null }
+  ).then(user => {
+    if (!user) {
+      res.status(400).send('Invalid or expired verification token');
+    } else {
+      res.status(200).send('Email verified successfully!');
+    }
+  })
+  .catch(err => {
+    console.error('Error verifying email:', err);
+    res.status(500).send('Error verifying email');
+  });
+  
+}
 
 
 //login controller
@@ -118,9 +148,15 @@ export const loginController = async (req,res) =>{
                 message: 'invalid credentials'
             });
         }
+        else if (!user.verified) {
+            return res.status(403).send({
+                success:false,
+                message:'Email not verified'
+            });
+          }
         //token
-        const token = user.generateToken();
-        res.status(200).cookie("token",token,{
+        const jtoken = user.generateToken();
+        res.status(200).cookie("token",jtoken,{
             expires: new Date(Date.now()+ 3 * 24 * 60 * 1000),
             httpOnly: process.env.NODE_ENV === "development"?true:false,
             // secure : process.env.NODE_ENV === "development"?true:false,
@@ -131,7 +167,7 @@ export const loginController = async (req,res) =>{
             success:true,
             message: 'Login successfull',
             user,
-            token
+            jtoken
         });
     }catch(error){
         console.log(error);
@@ -143,3 +179,19 @@ export const loginController = async (req,res) =>{
     }
 };
 
+//GET USER PROFILE
+export const getUserProfileController = async (req,res)=> {
+    try {
+        res.send(200).send({
+            success:true,
+            message: "User profile fetched successfully"
+        });
+    } catch (error) {
+        console.log(error); 
+        res.status(500).send({
+            success:false,
+            message: 'Error in profile api',
+            error
+        });
+    }
+};

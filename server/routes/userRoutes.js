@@ -1,5 +1,5 @@
 import express from 'express'
-import { loginController, registerController } from '../controllers/userController.js';
+import { loginController, registerController, verifyUserController } from '../controllers/userController.js';
 
 //router object
 const router = express.Router();
@@ -10,6 +10,9 @@ router.post('/register', registerController);
 
 //login
 router.post('/login',loginController);
+
+//verification
+router.get('/verify',verifyUserController);
 
 //profile
 

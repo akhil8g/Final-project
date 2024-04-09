@@ -22,6 +22,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Phone no. is required"],
     },
+    verificationToken: {
+      type: String
+    },
+    verified: {
+      type: Boolean
+    }
   },
   { timestamps: true }
 );
