@@ -182,9 +182,12 @@ export const loginController = async (req,res) =>{
 //GET USER PROFILE
 export const getUserProfileController = async (req,res)=> {
     try {
-        res.send(200).send({
+        const user = await userModel.findById(req.user._id);
+        user.password = undefined;
+        res.status(200).send({
             success:true,
-            message: "User profile fetched successfully"
+            message: "User profile fetched successfully",
+            user
         });
     } catch (error) {
         console.log(error); 
@@ -194,4 +197,19 @@ export const getUserProfileController = async (req,res)=> {
             error
         });
     }
+};
+
+//logout controller
+
+// logoutController.js
+
+export const logoutController = (req, res) => {
+  // Clear the JWT cookie from the client-side
+  res.clearCookie('token');
+  
+  // Send a success response indicating successful logout
+  res.status(200).json({
+    success: true,
+    message: 'Logout successful'
+  });
 };

@@ -31,6 +31,9 @@ import testRoutes from './routes/testRoutes.js';
 import userRoutes from './routes/userRoutes.js'
 app.use('/api/v1',testRoutes); 
 app.use('/api/v1/user',userRoutes);
+app.get('/', (req, res) => {
+    res.send('Hello World!');
+  });
 
 const port=process.env.PORT;
 
