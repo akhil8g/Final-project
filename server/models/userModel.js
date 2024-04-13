@@ -38,10 +38,13 @@ userSchema.pre("save", async function () {
   this.password = await bcrypt.hash(this.password, 10);
 });
 
+
+
 //compare password
 userSchema.methods.comparePassword = async function (plainPassword) {
   return await bcrypt.compare(plainPassword, this.password);
 };
+
 
 //JWT TOKEN
 userSchema.methods.generateToken = function () {

@@ -2,6 +2,7 @@ import userModel from "../models/userModel.js";
 import nodemailer from 'nodemailer';
 import { v4 as uuidv4} from 'uuid';
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
@@ -212,4 +213,102 @@ export const logoutController = (req, res) => {
     success: true,
     message: 'Logout successful'
   });
+};
+
+
+//update profile controller
+export const updateUserDetailsController = async (req, res) => {
+  try {
+      // Extract updated user details from the request body
+      const {name, password, phone} = req.body;
+
+      // Get the user ID from the authenticated user data attached to the request object
+      const userId = req.user._id;
+
+      let updatedPassword;
+      if (password) {
+        // Hash the password using bcrypt
+        updatedPassword = await bcrypt.hash(password, 10);
+    }
+
+      // Update all user details in the database
+      const updatedUser = await userModel.findByIdAndUpdate(
+        userId,
+        { name, password:updatedPassword, phone }, // Exclude the email field from the update
+        { new: true }
+    );
+
+      // Send a success response with the updated user data
+      res.status(200).json({
+          success: true,
+          message: 'User details updated successfully',
+          user: updatedUser
+      });
+  } catch (error) {
+      console.error('Error updating user details:', error);
+      res.status(500).json({
+          success: false,
+          message: 'Error in updating profile',
+          error: error.message
+      });
+  }
+};
+
+//Update password controller
+
+export const updateUserPasswordController = async (req, res) => {
+  try {
+      // Extract old and new passwords from request body
+      const { oldPassword, newPassword } = req.body;
+
+      // Check if old password is the same as the new password
+      if (oldPassword === newPassword) {
+          return res.status(400).json({
+              success: false,
+              message: 'New password must be different from the old password'
+          });
+      }
+
+      // Get user ID from authenticated user data attached to the request object
+      const userId = req.user._id;
+
+      // Find the user by ID
+      const user = await userModel.findById(userId);
+
+      // Check if the user exists
+      if (!user) {
+          return res.status(404).json({
+              success: false,
+              message: 'User not found'
+          });
+      }
+
+      // Compare the old password with the existing password
+      const isPasswordValid = await user.comparePassword(oldPassword);
+      if (!isPasswordValid) {
+          return res.status(400).json({
+              success: false,
+              message: 'Invalid old password'
+          });
+      }
+
+      // Update user's password
+      user.password = newPassword;
+
+      // Save the updated user
+      await user.save();
+
+      // Send a success response
+      res.status(200).json({
+          success: true,
+          message: 'Password updated successfully'
+      });
+  } catch (error) {
+      console.error('Error updating password:', error);
+      res.status(500).json({
+          success: false,
+          message: 'Internal server error',
+          error: error.message
+      });
+  }
 };
