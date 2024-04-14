@@ -3,6 +3,7 @@ import morgan from 'morgan';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import {v2 as cloudinary} from 'cloudinary';
 //routes imports
 
 import connectDB from './config/db.js';
@@ -12,6 +13,14 @@ dotenv.config();
 
 //database connection
 connectDB();
+
+//Cloudinary config
+
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_NAME, 
+  api_key: process.env.CLOUDINARY_KEY, 
+  api_secret: process.env.CLOUDINARY_SECRET 
+});
 
 const app = express();
 

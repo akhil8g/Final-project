@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import { v4 as uuidv4} from 'uuid';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import {v2 as cloudinary} from 'cloudinary';
 
 dotenv.config();
 
@@ -310,5 +311,43 @@ export const updateUserPasswordController = async (req, res) => {
           message: 'Internal server error',
           error: error.message
       });
+  }
+};
+
+// update profile picture controller
+
+export const uploadProfilePicture = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+
+    // Upload image to Cloudinary
+    cloudinary.uploader.upload_stream({ resource_type: 'auto' }, async (error, result) => {
+      if (error) {
+        console.error('Error uploading profile picture to Cloudinary:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+      }
+
+      // Update user profile with profile picture URL
+      const userId = req.user._id; // Assuming user data is attached to the request object
+      const user = await userModel.findById(userId);
+
+      // Delete existing profile picture from Cloudinary if it exists
+      if (user.profilePictureUrl) {
+        const publicId = user.profilePictureUrl.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(publicId);
+      }
+
+      // Update user profile with new profile picture URL
+      user.profilePictureUrl = result.secure_url;
+      await user.save();
+
+      res.status(200).json({ profilePictureUrl: result.secure_url });
+    }).end(req.file.buffer);
+
+  } catch (error) {
+    console.error('Error uploading profile picture to Cloudinary:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
