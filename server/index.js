@@ -23,7 +23,13 @@ cloudinary.config({
 });
 
 const app = express();
+app.set('view engine', 'ejs');
 
+// Parse URL-encoded bodies (form data)
+app.use(express.urlencoded({ extended: true }));
+
+// Parse JSON bodies
+app.use(express.json());
 // app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(express.static("public"));
 //Middleware

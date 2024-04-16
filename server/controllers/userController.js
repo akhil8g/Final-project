@@ -4,6 +4,16 @@ import { v4 as uuidv4} from 'uuid';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import {v2 as cloudinary} from 'cloudinary';
+import JWT from "jsonwebtoken";
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+
+
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 
 dotenv.config();
 
@@ -351,3 +361,83 @@ export const uploadProfilePicture = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+
+export const forgotPasswordController = (req,res) =>{
+  const {email} = req.body;
+
+  const token = JWT.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+   const resetLink =  `http://localhost:3000/api/v1/user/reset-password?token=${token}`;
+
+   const mailOptions = {
+    from: process.env.VERIFY_EMAIL,
+    to: email,
+    subject: 'Password-reset',
+    html: `
+      <p>Click the following link to reset your email:</p>
+      <a href=${resetLink}>Verify Email</a>
+    `
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error('Error sending password reset email', error);
+      res.status(500).send({
+        success: true,
+        message: "Password Reset email sent"
+
+      });
+    } else {
+      console.log('Password reset email sent:');
+      res.status(200).send({
+        success: true,
+        message: "Password Reset email sent"
+
+      }); 
+    }
+  });
+
+}
+
+//Reset Pass Get
+export const resetPassGet =(req,res)=>{
+  const {token} = req.query;
+  // const htmlFilePath = path.join(__dirname, '..', 'view', 'resetPass.html');
+  // console.log(htmlFilePath);
+  res.render('resetPass',{token});
+}
+
+//Reset password controller
+export const resetPasswordController = async(req,res) => {
+  try {
+    // Extract token and new password from request body
+    const { token, newPassword } = req.body;
+
+    // Verify token validity
+
+
+    // Decode token (assuming it's a JWT)
+    const decodedToken = JWT.verify(token, process.env.JWT_SECRET);
+
+    // Find user by email (assuming email is stored in the token)
+    const user = await userModel.findOne({ email: decodedToken.email });
+
+    // Check if user exists
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+  
+
+    // Update user's password in the database
+    user.password = newPassword;
+    await user.save();
+
+    // Send response
+    res.status(200).json({ message: 'Password reset successful' });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
