@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import {v2 as cloudinary} from 'cloudinary';
+
 //routes imports
 
 import connectDB from './config/db.js';
@@ -44,11 +45,11 @@ app.use(cookieParser());
 //routes
 import testRoutes from './routes/testRoutes.js';
 import userRoutes from './routes/userRoutes.js'
+import productRoutes from './routes/productsRoutes.js'
 app.use('/api/v1',testRoutes); 
 app.use('/api/v1/user',userRoutes);
-app.get('/', (req, res) => {
-    res.send('Hello World!');
-  });
+app.use('/api/v1/app',productRoutes);
+
 
 const port=process.env.PORT;
 
