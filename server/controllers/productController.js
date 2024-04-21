@@ -66,3 +66,58 @@ export const postProductsController = async (req, res) => {
         });
     }
 };
+
+
+//Book a product
+// In your productController.js
+
+export const bookProductController = async (req, res) => {
+    try {
+        const { productId } = req.body; // Assuming you send the product ID in the request body
+        const userId = req.user._id; // Assuming user data is attached to the request object
+
+        // Find the product by its ID and update the bookedBy array
+        const updatedProduct = await productModel.findByIdAndUpdate(
+            productId,
+            { $push: { bookedBy: userId } }, // Add the user's ID to the bookedBy array
+            { new: true } // Return the updated product
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Product booked successfully',
+            product: updatedProduct
+        });
+    } catch (error) {
+        console.error('Error booking product:', error);
+        res.status(500).json({ success: false, message: 'Error booking product' });
+    }
+};
+
+//Retrieving booked users
+// productController.js
+export const getBookedUsersController = async (req, res) => {
+    try {
+        const { productId } = req.params;
+
+        // Find the product by its ID
+        const product = await productModel.findById(productId).populate('bookedBy');
+
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+
+        // Extract the booked users from the product document
+        const bookedUsers = product.bookedBy.map(user => ({
+            name: user.name,
+            phone: user.phone
+        }));
+        
+
+        res.status(200).json({ success: true, bookedUsers });
+    } catch (error) {
+        console.error('Error retrieving booked users:', error);
+        res.status(500).json({ success: false, message: 'Error retrieving booked users' });
+    }
+};
+

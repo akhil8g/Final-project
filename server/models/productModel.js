@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import userModel from './userModel.js';
+
 const productSchema = new mongoose.Schema({
   productName: {
     type: String,
@@ -14,10 +15,10 @@ const productSchema = new mongoose.Schema({
     ref: userModel, // Assuming your user model is named 'User'
     required: true,
   },
+  bookedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: userModel }], // Array of ObjectIds referencing the User model
   photoUrl: {
     type: String,
     required: true
-    
   }
 });
 
