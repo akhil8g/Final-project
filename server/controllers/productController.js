@@ -15,8 +15,13 @@ export const allProductsController = async (req, res) => {
         const communityId = user.communityId;
 
         // Query the productModel for all products belonging to the community
-        // Exclude products booked by the user
-        const products = await productModel.find({ communityId, bookedBy: { $ne: userId } });
+        // Exclude products booked by the user and where isRented is true
+        const products = await productModel.find({ 
+            communityId, 
+            bookedBy: { $ne: userId }, 
+            isRented: false, 
+            memberId: { $ne: userId } 
+        });
 
         // Send the retrieved products as a response
         res.status(200).json({ success: true, products });
