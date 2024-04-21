@@ -1,4 +1,4 @@
-import userModel from "../models/userModel.js";
+import {userModel} from "../models/userModel.js";
 import nodemailer from 'nodemailer';
 import { v4 as uuidv4} from 'uuid';
 import dotenv from 'dotenv';

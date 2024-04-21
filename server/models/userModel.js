@@ -30,7 +30,11 @@ const userSchema = new mongoose.Schema(
     },
     profilePictureUrl: {
       type: String
-    }
+    },
+    bookedProducts: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Products"
+  }]
   },
   { timestamps: true }
 );
@@ -56,5 +60,5 @@ userSchema.methods.generateToken = function () {
   });
 };
 
-const userModel = mongoose.model("User", userSchema);
-export default userModel;
+export const userModel = mongoose.model("User", userSchema);
+

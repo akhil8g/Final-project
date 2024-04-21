@@ -1,4 +1,4 @@
-import userModel from "../models/userModel.js";
+import {userModel} from "../models/userModel.js";
 import {productModel} from "../models/productModel.js";
 import {v2 as cloudinary} from 'cloudinary';
 
@@ -15,7 +15,8 @@ export const allProductsController = async (req, res) => {
         const communityId = user.communityId;
 
         // Query the productModel for all products belonging to the community
-        const products = await productModel.find({ communityId });
+        // Exclude products booked by the user
+        const products = await productModel.find({ communityId, bookedBy: { $ne: userId } });
 
         // Send the retrieved products as a response
         res.status(200).json({ success: true, products });
@@ -24,6 +25,7 @@ export const allProductsController = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error in products fetch' });
     }
 };
+
 
 
 export const postProductsController = async (req, res) => {
@@ -120,4 +122,28 @@ export const getBookedUsersController = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error retrieving booked users' });
     }
 };
+
+
+//Grant the booking request from a list of requests for the product
+export const grantBookingController = async (req, res) => {
+    try {
+        const { productId, userId } = req.body;
+
+        // Update the user's bookedProducts array
+        await userModel.findByIdAndUpdate(userId, { $push: { bookedProducts: productId } });
+
+        // Update the product's givenTo array
+        await productModel.findByIdAndUpdate(productId, { $push: { givenTo: userId } });
+
+        // Empty the bookedBy array of the productModel
+        await productModel.findByIdAndUpdate(productId, { $set: { bookedBy: [] } });
+
+        res.status(200).json({ success: true, message: 'Booking granted successfully' });
+    } catch (error) {
+        console.error('Error granting booking:', error);
+        res.status(500).json({ success: false, message: 'Error granting booking' });
+    }
+};
+
+
 

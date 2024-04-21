@@ -1,4 +1,4 @@
-import userModel from "../models/userModel.js";
+import {userModel} from "../models/userModel.js";
 import { requestModel } from "../models/requestModel.js";
 import {v2 as cloudinary} from 'cloudinary';
 
