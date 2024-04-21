@@ -55,7 +55,32 @@ const userSchema = new mongoose.Schema(
     joined: {
       type: Boolean,
       default: false
-    }
+    },
+    reports: [{
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      },
+      name: {
+        type: String,
+        required: true
+      },
+      phone: {
+        type: String, // You can adjust this to the appropriate type for user information
+        required: true
+      },
+      email: {
+        type: String,
+        required: true
+      },
+      reason: {
+        type: String,
+        required: true
+      },
+      reportedBy:{
+        type: String
+      }
+    }]
 
   },
 { timestamps: true }

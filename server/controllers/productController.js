@@ -1,6 +1,10 @@
 import {userModel} from "../models/userModel.js";
 import {productModel} from "../models/productModel.js";
 import {v2 as cloudinary} from 'cloudinary';
+import nodemailer from 'nodemailer';
+import dotenv from "dotenv";
+
+dotenv.config();
 
 
 export const allProductsController = async (req, res) => {
@@ -186,5 +190,76 @@ export const getMyItemsController = async (req, res) => {
     }
 };
 
+
+//Report controller
+
+export const reportUserController = async (req, res) => {
+    try {
+        // Fetch the user ID to be reported from the request body
+        const { userId, reportReason } = req.body;
+
+        // Fetch the current user's ID from the request object
+        const reporterId = req.user._id;
+        const reporter = await userModel.findById(reporterId);
+
+        // Find the user to be reported
+        const userToReport = await userModel.findById(userId);
+        if (!userToReport) {
+            return res.status(404).json({ success: false, message: 'User to report not found' });
+        }
+
+        // Fetch the community ID from the current user
+        const communityId = req.user.communityId;
+
+        // Find the community leader corresponding to the community ID
+        const leader = await userModel.findOne({ communityId, isLeader: true });
+        if (!leader) {
+            return res.status(404).json({ success: false, message: 'Leader not found for this community' });
+        }
+        console.log(userToReport._id);
+
+        // Construct the report object
+        const report = {
+            userId: userToReport._id,
+            name: userToReport.name,
+            phone: userToReport.phone,
+            email: userToReport.email,
+            reason: reportReason,
+            reportedBy :reporter.name
+        };
+
+        // Add the report to the leader's reports array
+        await userModel.findByIdAndUpdate(leader._id, { $push: { reports: report } });
+
+        // Send email to the reported user
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.VERIFY_EMAIL,
+                pass: process.env.VERIFY_PASS
+            }
+        });
+
+        const mailOptions = {
+            from: process.env.VERIFY_EMAIL,
+            to: userToReport.email,
+            subject: 'You have been reported',
+            text: `Hi ${userToReport.name},\n\nYou have been reported for the following reason: "${reportReason}" by ${reporter.name}`
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Error sending report email:', error);
+            } else {
+                console.log('Report email sent to user');
+            }
+        });
+
+        res.status(200).json({ success: true, message: 'User reported successfully' });
+    } catch (error) {
+        console.error('Error reporting user:', error);
+        res.status(500).json({ success: false, message: 'Error reporting user' });
+    }
+};
 
 

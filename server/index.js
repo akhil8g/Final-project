@@ -4,7 +4,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import {v2 as cloudinary} from 'cloudinary';
-import { requestModel } from './models/requestModel.js';
 
 //routes imports
 
@@ -69,5 +68,5 @@ app.post('/',(req,res)=>{
 });
 
 app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port} in ${process.env.NODE_ENV} mode`);
+    console.log(`Server is running at http://${process.env.IP}:${port} in ${process.env.NODE_ENV} mode`);
   });

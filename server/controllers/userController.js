@@ -170,7 +170,7 @@ export const verifyUserController = async (req, res) => {
       { verified: true, verificationToken: null }
     );
 
-    res.status(200).json({ success: true, message: 'Verification successful' });
+    res.status(200).send({ success: true, message: 'Verification successful' });
   } catch (error) {
     console.error('Error verifying user:', error);
     res.status(500).json({ success: false, message: 'Error verifying user' });
@@ -422,7 +422,7 @@ export const forgotPasswordController = (req,res) =>{
 
   const token = JWT.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-   const resetLink =  `http://localhost:3000/api/v1/user/reset-password?token=${token}`;
+   const resetLink =  `http://${process.env.IP}:3000/api/v1/user/reset-password?token=${token}`;
 
    const mailOptions = {
     from: process.env.VERIFY_EMAIL,
