@@ -18,6 +18,14 @@ const productSchema = new mongoose.Schema({
   photoUrl: {
     type: String,
     required: true
+  },
+  givenTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User" 
+  },
+  isRented: {
+    type: Boolean,
+    default: false
   }
 });
 

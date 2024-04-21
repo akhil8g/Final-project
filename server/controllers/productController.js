@@ -96,32 +96,32 @@ export const bookProductController = async (req, res) => {
     }
 };
 
-//Retrieving booked users
-// productController.js
-export const getBookedUsersController = async (req, res) => {
-    try {
-        const { productId } = req.params;
+// //Retrieving booked users
+// // productController.js
+// export const getBookedUsersController = async (req, res) => {
+//     try {
+//         const { productId } = req.params;
 
-        // Find the product by its ID
-        const product = await productModel.findById(productId).populate('bookedBy');
+//         // Find the product by its ID
+//         const product = await productModel.findById(productId).populate('bookedBy');
 
-        if (!product) {
-            return res.status(404).json({ success: false, message: 'Product not found' });
-        }
+//         if (!product) {
+//             return res.status(404).json({ success: false, message: 'Product not found' });
+//         }
 
-        // Extract the booked users from the product document
-        const bookedUsers = product.bookedBy.map(user => ({
-            name: user.name,
-            phone: user.phone
-        }));
+//         // Extract the booked users from the product document
+//         const bookedUsers = product.bookedBy.map(user => ({
+//             name: user.name,
+//             phone: user.phone
+//         }));
         
 
-        res.status(200).json({ success: true, bookedUsers });
-    } catch (error) {
-        console.error('Error retrieving booked users:', error);
-        res.status(500).json({ success: false, message: 'Error retrieving booked users' });
-    }
-};
+//         res.status(200).json({ success: true, bookedUsers });
+//     } catch (error) {
+//         console.error('Error retrieving booked users:', error);
+//         res.status(500).json({ success: false, message: 'Error retrieving booked users' });
+//     }
+// };
 
 
 //Grant the booking request from a list of requests for the product
@@ -133,7 +133,10 @@ export const grantBookingController = async (req, res) => {
         await userModel.findByIdAndUpdate(userId, { $push: { bookedProducts: productId } });
 
         // Update the product's givenTo array
-        await productModel.findByIdAndUpdate(productId, { $push: { givenTo: userId } });
+        await productModel.findByIdAndUpdate(productId, {
+            givenTo: userId,
+            isRented:true
+        });
 
         // Empty the bookedBy array of the productModel
         await productModel.findByIdAndUpdate(productId, { $set: { bookedBy: [] } });
@@ -142,6 +145,39 @@ export const grantBookingController = async (req, res) => {
     } catch (error) {
         console.error('Error granting booking:', error);
         res.status(500).json({ success: false, message: 'Error granting booking' });
+    }
+};
+
+//retrieve myitems
+
+// productController.js
+
+export const getMyItemsController = async (req, res) => {
+    try {
+        const userId = req.user._id; // Assuming user data is attached to the request object
+
+        // Find products where the memberId is the same as the current user's ID
+        const myProducts = await productModel.find({ memberId: userId })
+            .populate({ 
+                path: 'bookedBy', 
+                select: 'name phone', 
+                options: { 
+                    match: { isRented: false } // Only populate if not rented
+                } 
+            })
+            .populate({ 
+                path: 'givenTo', 
+                select: 'name phone', 
+                options: { 
+                    match: { isRented: true } // Only populate if rented
+                } 
+            })
+            .select('productName productDetails photoUrl isRented');
+
+        res.status(200).json({ success: true, myProducts });
+    } catch (error) {
+        console.error('Error retrieving user products:', error);
+        res.status(500).json({ success: false, message: 'Error retrieving user products' });
     }
 };
 
