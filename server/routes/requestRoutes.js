@@ -1,7 +1,8 @@
 import express from 'express'
 import { isAuth } from '../middlewares/authMiddleware.js';
-import { allProductsController, postProductsController } from '../controllers/productController.js';
+import { allRequestsController, postRequestsController } from '../controllers/requestController.js';
 import {upload} from '../middlewares/multer.js';
+
 
 
 //router object
@@ -9,10 +10,10 @@ const router = express.Router();
 
 //Routes
 //Get all products
-router.get('/products',isAuth, allProductsController );
+router.get('/requests',isAuth, allRequestsController );
 
 //post product                                      //use this for sending picture
-router.post('/post/products', isAuth, upload.single('productPicture'), postProductsController);
+router.post('/post/requests', isAuth, upload.single('productPicture'),postRequestsController);
 
 //export
 export default router;

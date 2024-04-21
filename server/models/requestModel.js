@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import userModel from './userModel.js';
-const productSchema = new mongoose.Schema({
+const requestSchema = new mongoose.Schema({
   productName: {
     type: String,
     required: [true, "Product name is required"],
@@ -16,11 +16,10 @@ const productSchema = new mongoose.Schema({
   },
   photoUrl: {
     type: String,
-    required: true
     
   }
 });
 
-export const productModel = mongoose.model("Products", productSchema);
+export const requestModel = mongoose.model("Requests", requestSchema);
 
 

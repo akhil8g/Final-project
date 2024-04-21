@@ -357,7 +357,7 @@ export const uploadProfilePicture = async (req, res) => {
     }).end(req.file.buffer);
 
   } catch (error) {
-    console.error('Error uploading profile picture to Cloudinary:', error);
+    console.log('Error uploading profile picture to Cloudinary:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
