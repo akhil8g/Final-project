@@ -48,10 +48,14 @@ import testRoutes from './routes/testRoutes.js';
 import userRoutes from './routes/userRoutes.js'
 import productRoutes from './routes/productsRoutes.js';
 import requestRoutes from './routes/requestRoutes.js';
+import leaderRoutes from './routes/leaderRoutes.js'
+
 app.use('/api/v1',testRoutes); 
 app.use('/api/v1/user',userRoutes);
 app.use('/api/v1/app',productRoutes);
 app.use('/api/v1/app',requestRoutes);
+app.use('/api/v1/leader',leaderRoutes);
+
 
 
 const port=process.env.PORT;

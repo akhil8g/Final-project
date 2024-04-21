@@ -15,5 +15,7 @@ router.get('/requests',isAuth, allRequestsController );
 //post product                                      //use this for sending picture
 router.post('/post/requests', isAuth, upload.single('productPicture'),postRequestsController);
 
+
+
 //export
 export default router;

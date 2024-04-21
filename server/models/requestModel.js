@@ -17,8 +17,14 @@ const requestSchema = new mongoose.Schema({
   photoUrl: {
     type: String,
     
-  }
-});
+  },
+  communityId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Community"
+  },
+},
+{ timestamps: true }
+);
 
 export const requestModel = mongoose.model("Requests", requestSchema);
 

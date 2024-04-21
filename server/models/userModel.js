@@ -22,6 +22,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Phone no. is required"],
     },
+    pincode: {
+      type: String,
+      required: true
+    },
+    isLeader: {
+      type: Boolean,
+      default: false
+    }
+    ,
     verificationToken: {
       type: String
     },
@@ -34,9 +43,22 @@ const userSchema = new mongoose.Schema(
     bookedProducts: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Products"
-  }]
+    }],
+    communityId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Community"
+    },
+    joinRequest:[{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+    }],
+    joined: {
+      type: Boolean,
+      default: false
+    }
+
   },
-  { timestamps: true }
+{ timestamps: true }
 );
 
 //function

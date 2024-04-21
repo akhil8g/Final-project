@@ -1,11 +1,11 @@
 import {userModel} from "../models/userModel.js";
+import {communityModel} from "../models/communityModel.js"
 import nodemailer from 'nodemailer';
 import { v4 as uuidv4} from 'uuid';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import {v2 as cloudinary} from 'cloudinary';
 import JWT from "jsonwebtoken";
-import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -60,9 +60,9 @@ function sendVerificationEmail(email, token) {
 
 export const registerController = async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, pincode} = req.body;
     //validation
-    if (!name || !email || !password || !phone) {
+    if (!name || !email || !password || !phone || !pincode) {
       return res.status(500).send({
         success: false,
         message: "Please provide all fields"
@@ -89,9 +89,14 @@ export const registerController = async (req, res) => {
         email, 
         password, 
         phone,
+        pincode,
         verificationToken:token,
         verified: false
     });
+
+    
+
+
     console.log(user);
     res.status(200).send({
         success:true,
@@ -108,27 +113,70 @@ export const registerController = async (req, res) => {
   }
 };
 
-export const verifyUserController = (req,res) => {
-    const token1 = req.query.token;
-  // Here you would validate the token against your database
-  // Example: Validate against MongoDB
-  // Replace this with your actual database logic
-  userModel.findOneAndUpdate(
-    { verificationToken: token1 },
-    { verified: true, verificationToken: null }
-  ).then(user => {
+export const verifyUserController = async (req, res) => {
+  try {
+    const token = req.query.token;
+    // Validate the token against your database
+    const user = await userModel.findOne({ verificationToken: token });
+
     if (!user) {
-      res.status(400).send('Invalid or expired verification token');
-    } else {
-      res.status(200).send('Email verified successfully!');
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
-  })
-  .catch(err => {
-    console.error('Error verifying email:', err);
-    res.status(500).send('Error verifying email');
-  });
-  
-}
+
+    const community = await communityModel.findOne({pincode:user.pincode});
+
+
+    // Check if the user is already in the leader's joinRequest array
+    const leader = await userModel.findById(community.leaderId);
+    if (!leader) {
+      return res.status(404).json({ success: false, message: 'Leader not found' });
+    }
+
+    const isAlreadyRequested = leader.joinRequest.includes(user._id);
+    if (!isAlreadyRequested) {
+      // Add the user's ID to the joinRequest array of the leader
+      await userModel.findByIdAndUpdate(leader._id, { $push: { joinRequest: user._id } });
+
+      // Send email to leader
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.VERIFY_EMAIL, // Enter your email address
+          pass: process.env.VERIFY_PASS // Enter your email password
+        }
+      });
+
+      const mailOptions = {
+        from: process.env.VERIFY_EMAIL, // Enter your email address
+        to: leader.email,
+        subject: 'New Join Request',
+        text: `Hi ${leader.name},\n\nYou have a new join request from ${user.name}.`
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error('Error sending leader email:', error);
+        } else {
+          console.log('Email sent to leader');
+        }
+      });
+    } else {
+      console.log('User already requested to join the community');
+    }
+
+    // Update user's verification status
+    await userModel.findOneAndUpdate(
+      { verificationToken: token },
+      { verified: true, verificationToken: null }
+    );
+
+    res.status(200).json({ success: true, message: 'Verification successful' });
+  } catch (error) {
+    console.error('Error verifying user:', error);
+    res.status(500).json({ success: false, message: 'Error verifying user' });
+  }
+};
+
 
 
 //login controller
@@ -164,6 +212,12 @@ export const loginController = async (req,res) =>{
             return res.status(403).send({
                 success:false,
                 message:'Email not verified'
+            });
+          }
+          else if (!user.joined) {
+            return res.status(403).send({
+                success:false,
+                message:'Join-request not approved by leader'
             });
           }
         //token

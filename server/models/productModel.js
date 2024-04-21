@@ -26,8 +26,14 @@ const productSchema = new mongoose.Schema({
   isRented: {
     type: Boolean,
     default: false
+  },
+  communityId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Community"
   }
-});
+} ,
+{ timestamps: true }
+);
 
 export const productModel = mongoose.model("Products", productSchema);
 
