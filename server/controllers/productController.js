@@ -3,6 +3,7 @@ import {productModel} from "../models/productModel.js";
 import {v2 as cloudinary} from 'cloudinary';
 import nodemailer from 'nodemailer';
 import dotenv from "dotenv";
+import { logsModel } from "../models/logsModel.js";
 
 dotenv.config();
 
@@ -145,9 +146,11 @@ export const bookProductController = async (req, res) => {
 
 
 //Grant the booking request from a list of requests for the product
+
 export const grantBookingController = async (req, res) => {
     try {
         const { productId, userId } = req.body;
+        const renterId = req.user._id; // Get the current user's ID from req.user
 
         // Update the user's bookedProducts array by pulling the productId
         await userModel.findByIdAndUpdate(userId, { $pull: { bookedProducts: productId } });
@@ -164,12 +167,23 @@ export const grantBookingController = async (req, res) => {
         // Empty the bookedBy array of the productModel
         await productModel.findByIdAndUpdate(productId, { $set: { bookedBy: [] } });
 
+        // Create a new log entry
+        const logEntry = new logsModel({
+            RenterID: renterId,
+            RenteeId: userId,
+            productId: productId
+        });
+
+        // Save the log entry to the database
+        await logEntry.save();
+
         res.status(200).json({ success: true, message: 'Booking granted successfully' });
     } catch (error) {
         console.error('Error granting booking:', error);
         res.status(500).json({ success: false, message: 'Error granting booking' });
     }
 };
+
 
 //retrieve myitems
 
@@ -183,7 +197,7 @@ export const getMyItemsRentOutController = async (req, res) => {
         const myProducts = await productModel.find({ memberId: userId })
             .populate({ 
                 path: 'bookedBy', 
-                select: 'name phone', 
+                select: 'name phone karma', 
                 options: { 
                     match: { isRented: false } // Only populate if not rented
                 } 
@@ -341,3 +355,43 @@ export const returnedController = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error returning product' });
     }
 };
+
+
+//Delete Product
+export const deleteProductController = async (req, res) => {
+    try {
+        const { productId } = req.body;
+
+        // Find the product by its ID
+        const product = await productModel.findById(productId);
+
+        // Check if the product exists
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+
+        // Check if the user ID matches the memberId of the product
+        if (String(userId) !== String(product.memberId)) {
+            return res.status(403).json({ success: false, message: 'Unauthorized to delete this product' });
+        }
+
+        // Get the user IDs from the bookedBy array of the product
+        const userIds = product.bookedBy;
+
+        // Remove the product ID from the bookedProducts array of each corresponding user
+        await userModel.updateMany(
+            { _id: { $in: userIds } },
+            { $pull: { bookedProducts: productId } }
+        );
+
+        // Delete the product from the product model
+        await productModel.findByIdAndDelete(productId);
+
+        res.status(200).json({ success: true, message: 'Product deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        res.status(500).json({ success: false, message: 'Error deleting product' });
+    }
+};
+
+

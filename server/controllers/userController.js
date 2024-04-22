@@ -42,7 +42,7 @@ function sendVerificationEmail(email, token) {
       subject: 'Email Verification',
       html: `
         <p>Click the following link to verify your email:</p>
-        <a href="http://localhost:${process.env.PORT}/api/v1/user/verify?token=${token}">Verify Email</a>
+        <a href="http://${process.env.IP}:${process.env.PORT}/api/v1/user/verify?token=${token}">Verify Email</a>
       `
     };
   
@@ -495,3 +495,37 @@ export const resetPasswordController = async(req,res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 }
+
+//Get logs
+export const getLogsController = async (req, res) => {
+  try {
+      const userId = req.user._id; // Assuming user data is attached to the request object
+
+      // Find all logs where the current user is either the renter or rentee
+      const logs = await logsModel.find({
+          $or: [{ RenterID: userId }, { RenteeId: userId }]
+      }).populate('RenterID', 'name').populate('RenteeId', 'name').populate('productId', 'name').exec();
+
+      // Construct the response with the necessary information
+      const formattedLogs = logs.map(log => {
+          const renterName = log.RenterID.name;
+          const renteeName = log.RenteeId.name;
+          const productName = log.productId.name;
+          const date = log.date;
+          const direction = userId.equals(log.RenterID) ? 'from' : 'to';
+
+          return {
+              renterName,
+              renteeName,
+              productName,
+              date,
+              direction
+          };
+      });
+
+      res.status(200).json({ success: true, logs: formattedLogs });
+  } catch (error) {
+      console.error('Error fetching logs:', error);
+      res.status(500).json({ success: false, message: 'Error fetching logs' });
+  }
+};

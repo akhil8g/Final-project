@@ -1,5 +1,5 @@
 import express from 'express'
-import { forgotPasswordController, getUserProfileController, loginController, logoutController, registerController, resetPassGet, resetPasswordController, updateUserDetailsController, updateUserPasswordController, uploadProfilePicture, verifyUserController } from '../controllers/userController.js';
+import { forgotPasswordController, getLogsController, getUserProfileController, loginController, logoutController, registerController, resetPassGet, resetPasswordController, updateUserDetailsController, updateUserPasswordController, uploadProfilePicture, verifyUserController } from '../controllers/userController.js';
 import { isAuth } from '../middlewares/authMiddleware.js';
 import { upload } from '../middlewares/multer.js';
 
@@ -38,6 +38,9 @@ router.post('/forgot-password', forgotPasswordController);//pass email
 //Reset-Password 
 router.get('/reset-password',resetPassGet);
 router.post('/reset-pass', resetPasswordController);
+
+//get logs
+router.get('/logs', isAuth, getLogsController);
 
 
 //export
