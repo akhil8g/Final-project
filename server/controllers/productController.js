@@ -371,7 +371,7 @@ export const deleteProductController = async (req, res) => {
         }
 
         // Check if the user ID matches the memberId of the product
-        if (String(userId) !== String(product.memberId)) {
+        if (String(req.user._Id) !== String(product.memberId)) {
             return res.status(403).json({ success: false, message: 'Unauthorized to delete this product' });
         }
 
@@ -395,3 +395,34 @@ export const deleteProductController = async (req, res) => {
 };
 
 
+//Booked products
+export const fetchBookedProductsController = async (req, res) => {
+    try {
+        // Retrieve the user's ID from req.user
+        const userId = req.user._id;
+
+        // Find the corresponding user document using the user's ID
+        const user = await userModel.findById(userId);
+
+        // Extract the product IDs from the user's bookedProducts array
+        const productIds = user.bookedProducts;
+
+        // Query the productModel to fetch details of the products
+        const bookedProducts = await productModel.find({ _id: { $in: productIds } }).populate('memberId');
+
+        // Map the bookedProducts array to include required details
+        const formattedProducts = bookedProducts.map(product => ({
+            productName: product.productName,
+            productDetails: product.productDetails,
+            photoUrl: product.photoUrl,
+            memberName: product.memberId.name,
+            memberPhone: product.memberId.phone
+        }));
+
+        // Send the retrieved products as a response
+        res.status(200).json({ success: true, bookedProducts: formattedProducts });
+    } catch (error) {
+        console.error('Error fetching booked products:', error);
+        res.status(500).json({ success: false, message: 'Error fetching booked products' });
+    }
+};
