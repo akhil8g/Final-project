@@ -15,7 +15,10 @@ export const allRequestsController = async (req, res) => {
         const communityId = user.communityId;
 
         // Query the requestModel for all requests belonging to the community
-        const requests = await requestModel.find({ communityId }).populate({
+        const requests = await requestModel.find({ 
+            communityId,
+            memberId: { $ne: userId } // Exclude requests where memberId is same as userId
+        }).populate({
             path: 'memberId', // Populate the memberId field
             select: 'name phone karma', // Select the fields to include
         });
