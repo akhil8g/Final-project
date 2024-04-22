@@ -81,7 +81,8 @@ async function createProduct(productName, productDetails, userId, photoUrl,commu
         productName,
         productDetails,
         memberId: userId,
-        photoUrl
+        photoUrl,
+        communityId
     });
 }
 
