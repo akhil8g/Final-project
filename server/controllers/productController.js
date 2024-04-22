@@ -412,6 +412,7 @@ export const fetchBookedProductsController = async (req, res) => {
 
         // Map the bookedProducts array to include required details
         const formattedProducts = bookedProducts.map(product => ({
+            product_id:product._id,
             productName: product.productName,
             productDetails: product.productDetails,
             photoUrl: product.photoUrl,
@@ -424,5 +425,28 @@ export const fetchBookedProductsController = async (req, res) => {
     } catch (error) {
         console.error('Error fetching booked products:', error);
         res.status(500).json({ success: false, message: 'Error fetching booked products' });
+    }
+};
+
+
+//removeBooking
+export const cancelBookingController = async (req, res) => {
+    try {
+        // Get the product ID from the request body
+        const { productId } = req.body;
+
+        // Get the user's ID from the request object
+        const userId = req.user._id;
+
+        // Remove the product ID from the bookedProducts array of the user
+        await userModel.findByIdAndUpdate(userId, { $pull: { bookedProducts: productId } });
+
+        // Remove the user's ID from the bookedBy array of the product
+        await productModel.findByIdAndUpdate(productId, { $pull: { bookedBy: userId } });
+
+        res.status(200).json({ success: true, message: 'Booking canceled successfully' });
+    } catch (error) {
+        console.error('Error canceling booking:', error);
+        res.status(500).json({ success: false, message: 'Error canceling booking' });
     }
 };

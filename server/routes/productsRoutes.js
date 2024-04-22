@@ -1,6 +1,6 @@
 import express from 'express'
 import { isAuth } from '../middlewares/authMiddleware.js';
-import { allProductsController, bookProductController, deleteProductController, fetchBookedProductsController, getMyItemsRentInController, getMyItemsRentOutController, grantBookingController, postProductsController, reportUserController, returnedController } from '../controllers/productController.js';
+import { allProductsController, bookProductController, cancelBookingController, deleteProductController, fetchBookedProductsController, getMyItemsRentInController, getMyItemsRentOutController, grantBookingController, postProductsController, reportUserController, returnedController } from '../controllers/productController.js';
 import {upload} from '../middlewares/multer.js';
 
 
@@ -37,6 +37,10 @@ router.post('/delete-product', isAuth, deleteProductController);//pass productId
 
 //getBooked Products
 router.get('/booked-products', isAuth, fetchBookedProductsController);
+
+//cancel booking
+router.post('/cancle-booking', isAuth, cancelBookingController);//pass prroductId
+
 
 
 //export

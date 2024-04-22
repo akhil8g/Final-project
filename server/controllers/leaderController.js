@@ -89,3 +89,46 @@ export const grantRequestController = async (req, res) => {
     }
 };
  
+
+//view community members
+export const fetchCommunityUsersController = async (req, res) => {
+    try {
+        // Get the community ID from the request user object
+        const communityId = req.user.communityId;
+
+        // Find all users with the same community ID
+        const users = await userModel.find({ communityId });
+
+        // Extract name and phone from each user
+        const userDetails = users.map(user => ({ name: user.name, phone: user.phone }));
+
+        res.status(200).json({ success: true, users: userDetails });
+    } catch (error) {
+        console.error('Error fetching community users:', error);
+        res.status(500).json({ success: false, message: 'Error fetching community users' });
+    }
+};
+
+//view reports
+export const fetchUserReportsController = async (req, res) => {
+    try {
+        // Get the user ID from the request object
+        const userId = req.user._id;
+
+        // Find the user document by ID
+        const user = await userModel.findById(userId);
+
+        // Check if the user exists
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Extract the reports array from the user document
+        const reports = user.reports;
+
+        res.status(200).json({ success: true, reports });
+    } catch (error) {
+        console.error('Error fetching user reports:', error);
+        res.status(500).json({ success: false, message: 'Error fetching user reports' });
+    }
+};
