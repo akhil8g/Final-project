@@ -33,7 +33,7 @@ router.put('/update-password',isAuth,updateUserPasswordController);
 router.put('/profile-picture', isAuth, upload.single('profilePicture'), uploadProfilePicture);
 
 //ForgotPassword
-router.post('/forgot-password', forgotPasswordController);
+router.post('/forgot-password', forgotPasswordController);//pass email
 
 //Reset-Password 
 router.get('/reset-password',resetPassGet);

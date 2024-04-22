@@ -25,7 +25,7 @@ export const allProductsController = async (req, res) => {
             bookedBy: { $ne: userId }, 
             isRented: false, 
             memberId: { $ne: userId } 
-        });
+        }).populate('memberId', 'name phone');
 
         // Send the retrieved products as a response
         res.status(200).json({ success: true, products });
@@ -34,6 +34,7 @@ export const allProductsController = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error in products fetch' });
     }
 };
+
 
 
 
@@ -88,14 +89,20 @@ export const postProductsController = async (req, res) => {
 
 export const bookProductController = async (req, res) => {
     try {
-        const { productId } = req.body; // Assuming you send the product ID in the request body
-        const userId = req.user._id; // Assuming user data is attached to the request object
+        const { productId } = req.body;
+        const userId = req.user._id;
 
         // Find the product by its ID and update the bookedBy array
         const updatedProduct = await productModel.findByIdAndUpdate(
             productId,
-            { $push: { bookedBy: userId } }, // Add the user's ID to the bookedBy array
-            { new: true } // Return the updated product
+            { $push: { bookedBy: userId } },
+            { new: true }
+        );
+
+        // Update the user's bookedProducts array
+        await userModel.findByIdAndUpdate(
+            userId,
+            { $push: { bookedProducts: productId } } // Add the product ID to the bookedProducts array
         );
 
         res.status(200).json({
@@ -142,13 +149,16 @@ export const grantBookingController = async (req, res) => {
     try {
         const { productId, userId } = req.body;
 
-        // Update the user's bookedProducts array
-        await userModel.findByIdAndUpdate(userId, { $push: { bookedProducts: productId } });
+        // Update the user's bookedProducts array by pulling the productId
+        await userModel.findByIdAndUpdate(userId, { $pull: { bookedProducts: productId } });
 
-        // Update the product's givenTo array
+        // Update the user's RentIn array
+        await userModel.findByIdAndUpdate(userId, { $push: { RentIn: productId } });
+
+        // Update the product's givenTo field and set isRented to true
         await productModel.findByIdAndUpdate(productId, {
             givenTo: userId,
-            isRented:true
+            isRented: true
         });
 
         // Empty the bookedBy array of the productModel
@@ -165,7 +175,7 @@ export const grantBookingController = async (req, res) => {
 
 // productController.js
 
-export const getMyItemsController = async (req, res) => {
+export const getMyItemsRentOutController = async (req, res) => {
     try {
         const userId = req.user._id; // Assuming user data is attached to the request object
 
@@ -193,6 +203,8 @@ export const getMyItemsController = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error retrieving user products' });
     }
 };
+
+//my items rent in
 
 
 //Report controller
@@ -258,6 +270,9 @@ export const reportUserController = async (req, res) => {
                 console.log('Report email sent to user');
             }
         });
+
+        // Reduce karma points for the reported user
+        await userModel.findByIdAndUpdate(userId, { $inc: { karma: -10 } });
 
         res.status(200).json({ success: true, message: 'User reported successfully' });
     } catch (error) {

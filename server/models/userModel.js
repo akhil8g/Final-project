@@ -40,6 +40,11 @@ const userSchema = new mongoose.Schema(
     profilePictureUrl: {
       type: String
     },
+    RentIn: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Products"
+    }]
+    ,
     bookedProducts: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Products"
