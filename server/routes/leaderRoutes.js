@@ -1,6 +1,6 @@
 import express from 'express'
 import { isAuth } from '../middlewares/authMiddleware.js';
-import { fetchCommunityUsersController, fetchUserReportsController, grantRequestController, joinRequestController } from '../controllers/leaderController.js';
+import { deleteUserController, fetchCommunityUsersController, fetchUserReportsController, grantRequestController, joinRequestController } from '../controllers/leaderController.js';
 
 
 
@@ -18,6 +18,10 @@ router.post('/approve-request', isAuth, grantRequestController);//pass{userId}
 router.get('/members', isAuth, fetchCommunityUsersController);
 //view reports
 router.get('/all-reports', isAuth, fetchUserReportsController);
+
+//remove member
+router.post('/deleteUser', deleteUserController);
+
 
 
 //export

@@ -132,3 +132,25 @@ export const fetchUserReportsController = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error fetching user reports' });
     }
 };
+
+
+//remove user
+export const deleteUserController = async (req, res) => {
+    try {
+        // Get the userId from the request body
+        const { userId } = req.body;
+
+        // Find the user by ID and delete it
+        const deletedUser = await userModel.findByIdAndDelete(userId);
+
+        // Check if the user was found and deleted
+        if (!deletedUser) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        res.status(200).json({ success: true, message: 'User deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ success: false, message: 'Error deleting user' });
+    }
+};
