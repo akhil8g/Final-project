@@ -6,7 +6,7 @@ const requestSchema = new mongoose.Schema({
     required: [true, "Product name is required"],
   },
   productDetails: {
-    type: [String],
+    type: String,
     required: true,
   },
   memberId: {
