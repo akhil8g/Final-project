@@ -219,7 +219,7 @@ export const getMyItemsRentInController = async (req, res) => {
         // Query the productModel for details of products whose IDs are in the RentIn array
         const rentedProducts = await productModel
             .find({ _id: { $in: productIds } })
-            .populate('memberId', 'name phone'); // Populate the memberId field with name and phone
+            .populate('memberId', 'name phone karma'); // Populate the memberId field with name and phone
 
         res.status(200).json({ success: true, rentedProducts });
     } catch (error) {
@@ -307,3 +307,37 @@ export const reportUserController = async (req, res) => {
 };
 
 
+//My items returned Button get
+export const returnedController = async (req, res) => {
+    try {
+        const { productId } = req.body;
+
+        // Find the product by its ID
+        const product = await productModel.findById(productId);
+
+        // Check if the product exists
+        if (!product) {
+            return res.status(404).json({ success: false, message: 'Product not found' });
+        }
+
+        // Retrieve the user ID from the givenTo field of the product
+        const userId = product.givenTo;
+
+        // Remove the product ID from the RentIn array of the corresponding user
+        await userModel.findByIdAndUpdate(userId, { $pull: { RentIn: productId } });
+
+        // Delete the product from the product model
+        await productModel.findByIdAndDelete(productId);
+
+        // Increase karma of the user in givenTo by 1 if less than 100
+        const user = await userModel.findById(userId);
+        if (user && user.karma < 100) {
+            await userModel.findByIdAndUpdate(userId, { $inc: { karma: 1 } });
+        }
+
+        res.status(200).json({ success: true, message: 'Product returned successfully' });
+    } catch (error) {
+        console.error('Error returning product:', error);
+        res.status(500).json({ success: false, message: 'Error returning product' });
+    }
+};
