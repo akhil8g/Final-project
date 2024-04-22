@@ -61,6 +61,7 @@ function sendVerificationEmail(email, token) {
 export const registerController = async (req, res) => {
   try {
     const { name, email, password, phone, pincode} = req.body;
+    const karma = 100;
     //validation
     if (!name || !email || !password || !phone || !pincode) {
       return res.status(500).send({
@@ -91,7 +92,8 @@ export const registerController = async (req, res) => {
         phone,
         pincode,
         verificationToken:token,
-        verified: false
+        verified: false,
+        karma
     });
 
     
@@ -176,8 +178,6 @@ export const verifyUserController = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error verifying user' });
   }
 };
-
-
 
 //login controller
 

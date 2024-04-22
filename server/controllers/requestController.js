@@ -33,6 +33,9 @@ export const postRequestsController = async (req, res) => {
         const { productName, productDetails } = req.body;
         let photoUrl = null;
 
+        const user = await userModel.findById(req.user._id);
+        const communityId = user.communityId;
+
         if (req.file) {
             // Upload image to Cloudinary if it exists
             cloudinary.uploader.upload_stream({ resource_type: 'auto' }, async (error, result) => {
@@ -55,7 +58,8 @@ export const postRequestsController = async (req, res) => {
             product: {
                 productName,
                 productDetails,
-                photoUrl
+                photoUrl,
+                communityId
             }
         });
     } catch (error) {

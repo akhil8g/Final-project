@@ -80,7 +80,10 @@ const userSchema = new mongoose.Schema(
       reportedBy:{
         type: String
       }
-    }]
+    }],
+    karma: {
+      type: Number
+    }
 
   },
 { timestamps: true }

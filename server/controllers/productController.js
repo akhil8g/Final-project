@@ -44,6 +44,8 @@ export const postProductsController = async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ message: 'No image file provided' });
         }
+        const user = await userModel.findById(req.user._id);
+        const communityId = user.communityId;
 
         // Upload image to Cloudinary
         cloudinary.uploader.upload_stream({ resource_type: 'auto' }, async (error, result) => {
@@ -55,12 +57,14 @@ export const postProductsController = async (req, res) => {
             const userId = req.user._id; // Assuming user data is attached to the request object
             const photoUrl = result.secure_url;
 
+
             // Create new product
             const product = await productModel.create({
                 productName,
                 productDetails,
                 memberId: userId,
-                photoUrl
+                photoUrl,
+                communityId
             });
 
             res.status(200).json({
