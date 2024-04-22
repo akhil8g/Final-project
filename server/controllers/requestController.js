@@ -165,6 +165,17 @@ export const grantRequestController = async (req, res) => {
     }
 };
 
+//remover req
+export const removeRequestController = async (req, res) => {
+    try {
+        const { requestId } = req.body;
 
+        // Find the request by its ID and delete it
+        await requestModel.findByIdAndDelete(requestId);
 
-
+        res.status(200).json({ success: true, message: 'Request deleted successfully' });
+    } catch (error) {
+        console.error('Error removing request:', error);
+        res.status(500).json({ success: false, message: 'Error removing request' });
+    }
+};

@@ -1,6 +1,6 @@
 import express from 'express'
 import { isAuth } from '../middlewares/authMiddleware.js';
-import { allRequestsController, grantRequestController, myItemsRequestsController, postRequestsController } from '../controllers/requestController.js';
+import { allRequestsController, grantRequestController, myItemsRequestsController, postRequestsController, removeRequestController } from '../controllers/requestController.js';
 import {upload} from '../middlewares/multer.js';
 
 
@@ -20,6 +20,9 @@ router.get('/my-items/requests', isAuth, myItemsRequestsController);
 
 //Grant request
 router.post('/grant-req', isAuth,grantRequestController)//pass memberId and productName
+
+//delete request
+router.post('/remove-req',isAuth, removeRequestController);
 
 
 
