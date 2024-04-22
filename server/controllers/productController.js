@@ -204,6 +204,31 @@ export const getMyItemsRentOutController = async (req, res) => {
     }
 };
 
+//My-items Rent out
+export const getMyItemsRentInController = async (req, res) => {
+    try {
+        // Retrieve the user's ID from req.user
+        const userId = req.user._id;
+
+        // Find the corresponding user document using the user's ID
+        const user = await userModel.findById(userId);
+
+        // Retrieve the product IDs from the user's RentIn array
+        const productIds = user.RentIn;
+
+        // Query the productModel for details of products whose IDs are in the RentIn array
+        const rentedProducts = await productModel
+            .find({ _id: { $in: productIds } })
+            .populate('memberId', 'name phone'); // Populate the memberId field with name and phone
+
+        res.status(200).json({ success: true, rentedProducts });
+    } catch (error) {
+        console.error('Error fetching rented items:', error);
+        res.status(500).json({ success: false, message: 'Error fetching rented items' });
+    }
+};
+
+
 //my items rent in
 
 

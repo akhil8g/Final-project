@@ -1,6 +1,6 @@
 import express from 'express'
 import { isAuth } from '../middlewares/authMiddleware.js';
-import { allProductsController, bookProductController, getMyItemsRentOutController, grantBookingController, postProductsController, reportUserController } from '../controllers/productController.js';
+import { allProductsController, bookProductController, getMyItemsRentInController, getMyItemsRentOutController, grantBookingController, postProductsController, reportUserController } from '../controllers/productController.js';
 import {upload} from '../middlewares/multer.js';
 
 
@@ -21,7 +21,7 @@ router.post('/book/products', isAuth, bookProductController);
 router.get('/my-items/rent-out', isAuth, getMyItemsRentOutController);
 
 //myitems rent-in
-router.get('/my-item/rent-in', isAuth, )
+router.get('/my-items/rent-in', isAuth, getMyItemsRentInController);
 
 //Grant Booking request
 router.post('/grant-booking',isAuth, grantBookingController);
