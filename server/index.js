@@ -7,21 +7,17 @@ import {v2 as cloudinary} from 'cloudinary';
 
 //routes imports
 
-import connectDB from './config/db.js';
 
 //dot env config
 dotenv.config();
 
-//database connection
-connectDB();
-
 //Cloudinary config
 
-cloudinary.config({ 
-  cloud_name: process.env.CLOUDINARY_NAME, 
-  api_key: process.env.CLOUDINARY_KEY, 
-  api_secret: process.env.CLOUDINARY_SECRET 
-});
+// cloudinary.config({ 
+//   cloud_name: process.env.CLOUDINARY_NAME, 
+//   api_key: process.env.CLOUDINARY_KEY, 
+//   api_secret: process.env.CLOUDINARY_SECRET 
+// });
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -37,23 +33,17 @@ app.use(express.json());
 
 
 app.use(express.json());
-app.use(morgan('tiny'));
+// app.use(morgan('tiny'));
 app.use(cors());
 app.use(cookieParser());
  
 
 //routes
-import testRoutes from './routes/testRoutes.js';
-import userRoutes from './routes/userRoutes.js'
-import productRoutes from './routes/productsRoutes.js';
-import requestRoutes from './routes/requestRoutes.js';
-import leaderRoutes from './routes/leaderRoutes.js'
 
-app.use('/api/v1',testRoutes); 
+import userRoutes from './routes/userRoutes.js'
+
 app.use('/api/v1/user',userRoutes);
-app.use('/api/v1/app',productRoutes);
-app.use('/api/v1/app',requestRoutes);
-app.use('/api/v1/leader',leaderRoutes);
+
 
 
 
