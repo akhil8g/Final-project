@@ -41,8 +41,10 @@ app.use(cookieParser());
 //routes
 
 import userRoutes from './routes/userRoutes.js'
+import deviceRoutes from './routes/deviceRoutes.js'
 
-app.use('/api/v1/user',userRoutes);
+app.use('/api/v1/user', userRoutes);
+app.use('/api/v1/device', deviceRoutes)
 
 
 
