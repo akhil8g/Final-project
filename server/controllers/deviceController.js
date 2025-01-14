@@ -64,3 +64,65 @@ export const addDeviceController = async (req, res) => {
     });
   }
 };
+
+export const getUserDevicesController = async (req, res) => {
+  try {
+    // Get user details from `authMiddleware`
+    const userId = req.user.uid;
+
+    // Reference to the user's document
+    const userRef = doc(db, 'users', userId);
+    const userSnapshot = await getDoc(userRef);
+
+    if (!userSnapshot.exists()) {
+      return res.status(404).send({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Retrieve the devices array from the user's document
+    const userData = userSnapshot.data();
+    const deviceRefs = userData.devices || []; // `devices` is an array of document references
+
+    if (deviceRefs.length === 0) {
+      return res.status(200).send({
+        success: true,
+        message: 'No devices found for this user',
+        devices: [],
+      });
+    }
+
+    // Fetch the device data for each reference
+    const deviceDataPromises = deviceRefs.map(deviceRef => getDoc(deviceRef));
+    const deviceSnapshots = await Promise.all(deviceDataPromises);
+
+    // Extract the device names (or other desired fields) from each document
+    const devices = deviceSnapshots.map(snapshot => {
+      if (snapshot.exists()) {
+        const deviceData = snapshot.data();
+        return {
+          id: snapshot.id,
+          ...deviceData, // Include all device data
+        };
+      }
+      return null; // In case the device document doesn't exist
+    }).filter(device => device !== null); // Filter out any `null` values
+
+    // Send the response
+    res.status(200).send({
+      success: true,
+      message: 'Devices retrieved successfully',
+      devices,
+    });
+
+  } catch (error) {
+    console.error('Error retrieving devices:', error);
+
+    res.status(500).send({
+      success: false,
+      message: 'Error retrieving devices',
+      error: error.message,
+    });
+  }
+};
