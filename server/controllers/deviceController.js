@@ -1,69 +1,79 @@
-import { collection, addDoc, getDoc, Timestamp, doc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db } from '../config/firebase.js'; // Adjust the path to your firebase.js file
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { ref, set } from "firebase/database";
+import { db, rtdb } from "../config/firebase.js"; // Import Firestore and RTDB configurations
+import mqttClient from "../config/mqttConfig.js"; // Import MQTT client configuration
 
 export const addDeviceController = async (req, res) => {
   try {
     const { deviceId } = req.body;
 
-    // Validation: Ensure `deviceId` is provided
+    // Validate that `deviceId` is provided
     if (!deviceId) {
-      return res.status(400).send({
+      return res.status(400).json({
         success: false,
-        message: 'Device ID is required',
+        message: "Device ID is required.",
       });
     }
 
-    // Get user details from `authMiddleware`
-    const userId = req.user.uid;
+    // Get the user's UID from the auth middleware
+    const userId = req.user?.uid;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: User ID is missing.",
+      });
+    }
 
-    // Create a reference to the device collection
-    const devicesCollectionRef = collection(db, 'devices');
-
-    // Add a new device document with auto-generated ID
-    const docRef = await addDoc(devicesCollectionRef, {
+    // Step 1: Add the device to RTDB
+    const rtdbDeviceRef = ref(rtdb, `devices/${deviceId}`);
+    await set(rtdbDeviceRef, {
       userId,
       deviceId,
-      createdAt: Timestamp.fromDate(new Date()),
+      current: null, // Default value, updated later via MQTT
+      createdAt: Date.now(), // Timestamp for creation
     });
 
-    // Access the newly created device document using its reference ID (auto-generated ID)
-    const deviceSnapshot = await getDoc(docRef);
+    // Step 2: Create a reference for the RTDB path
+    const rtdbDevicePath = `devices/${deviceId}`;
 
-    if (deviceSnapshot.exists()) {
-      console.log('Device added successfully:', deviceSnapshot.data());
+    // Step 3: Update the user's Firestore document to include the RTDB reference
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, {
+      devices: arrayUnion(rtdbDevicePath), // Store RTDB reference in Firestore
+    });
 
-      // Step 2: Create a reference to the newly created device
-      const deviceReference = doc(db, 'devices', docRef.id);
+    // Step 4: Subscribe to the device's MQTT topic
+    const deviceTopic = `/devices/${deviceId}/data`;
+    mqttClient.subscribe(deviceTopic, { qos: 1 }, (err) => {
+      if (err) {
+        console.error(`Failed to subscribe to MQTT topic ${deviceTopic}:`, err);
+      } else {
+        console.log(`Successfully subscribed to MQTT topic: ${deviceTopic}`);
+      }
+    });
 
-      // Step 3: Update the user document and add the device reference to the `devices` array
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, {
-        devices: arrayUnion(deviceReference), // Use arrayUnion to avoid duplicate entries
-      });
-
-      // Sending success response
-      res.status(201).send({
-        success: true,
-        message: 'Device added successfully and user updated',
-        device: deviceSnapshot.data(), // Sending back the full device data
-      });
-    } else {
-      res.status(500).send({
-        success: false,
-        message: 'Error adding device',
-      });
-    }
-
+    // Respond with success
+    res.status(201).json({
+      success: true,
+      message: "Device added successfully and user updated.",
+      device: {
+        rtdbPath: rtdbDevicePath,
+        userId,
+        deviceId,
+      },
+    });
   } catch (error) {
-    console.error('Error adding device:', error);
+    console.error("Error adding device:", error);
 
-    res.status(500).send({
+    res.status(500).json({
       success: false,
-      message: 'Error adding device',
+      message: "An error occurred while adding the device.",
       error: error.message,
     });
   }
 };
+
+
 
 export const getUserDevicesController = async (req, res) => {
   try {

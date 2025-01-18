@@ -1,3 +1,4 @@
 *.env
 server/node_modules/
 server/uploads/
+server/config//smart-energy-e1ec5-firebase-adminsdk-j90k3-afbaf8b05d.json
