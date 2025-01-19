@@ -136,3 +136,58 @@ export const getUserDevicesController = async (req, res) => {
     });
   }
 };
+
+export const changeDeviceStateController = async (req, res) => {
+  try {
+    // Extract query parameters
+    const { deviceId, state } = req.query;
+
+    // Validate query parameters
+    if (!deviceId || typeof state === "undefined") {
+      return res.status(400).json({
+        success: false,
+        message: "Device ID and state are required as query parameters.",
+      });
+    }
+
+    // Parse and validate state (ensure it is 0 or 1)
+    const parsedState = parseInt(state, 10);
+    if (parsedState !== 0 && parsedState !== 1) {
+      return res.status(400).json({
+        success: false,
+        message: "State must be either 0 or 1.",
+      });
+    }
+
+    // Define the topic and payload
+    const topic = `/devices/${deviceId}/state`;
+    const payload = JSON.stringify({ state: parsedState }); // Serialize the state as JSON
+
+    // Publish the state change to the MQTT topic
+    mqttClient.publish(topic, payload, { qos: 1 }, (err) => {
+      if (err) {
+        console.error(`Error publishing to MQTT topic ${topic}:`, err);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to publish device state.",
+        });
+      }
+
+      console.log(`State ${parsedState} published to MQTT topic ${topic}`);
+
+      // Respond with success
+      res.status(200).json({
+        success: true,
+        message: `Device state changed successfully to ${parsedState}.`,
+      });
+    });
+  } catch (error) {
+    console.error("Error changing device state:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while changing device state.",
+      error: error.message,
+    });
+  }
+};
