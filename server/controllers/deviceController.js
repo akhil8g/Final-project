@@ -1,11 +1,11 @@
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
 import { ref, set } from "firebase/database";
 import { db, rtdb } from "../config/firebase.js"; // Import Firestore and RTDB configurations
 import mqttClient from "../config/mqttConfig.js"; // Import MQTT client configuration
 
 export const addDeviceController = async (req, res) => {
   try {
-    const { deviceId } = req.body;
+    const { deviceId, deviceName } = req.body;
 
     // Validate that `deviceId` is provided
     if (!deviceId) {
@@ -29,6 +29,7 @@ export const addDeviceController = async (req, res) => {
     await set(rtdbDeviceRef, {
       userId,
       deviceId,
+      deviceName,
       current: null, // Default value, updated later via MQTT
       createdAt: Date.now(), // Timestamp for creation
     });
@@ -51,6 +52,15 @@ export const addDeviceController = async (req, res) => {
         console.log(`Successfully subscribed to MQTT topic: ${deviceTopic}`);
       }
     });
+    // subscribe to on-off status of the device for maintaining the record of 
+    const deviceStatus = `/devices/${deviceId}/status`;
+    mqttClient.subscribe(deviceStatus, { qos: 1 }, (err) => {
+      if (err) {
+        console.error(`Failed to subscribe to MQTT topic ${deviceStatus}:`, err);
+      } else {
+        console.log(`Successfully subscribed to MQTT topic: ${deviceStatus}`);
+      }
+    });
 
     // Respond with success
     res.status(201).json({
@@ -60,6 +70,7 @@ export const addDeviceController = async (req, res) => {
         rtdbPath: rtdbDevicePath,
         userId,
         deviceId,
+        deviceName
       },
     });
   } catch (error) {
@@ -77,12 +88,13 @@ export const addDeviceController = async (req, res) => {
 
 export const getUserDevicesController = async (req, res) => {
   try {
-    // Get user details from `authMiddleware`
     const userId = req.user.uid;
 
-    // Reference to the user's document
-    const userRef = doc(db, 'users', userId);
-    const userSnapshot = await getDoc(userRef);
+    // Reference to the user's RTDB node
+    const userRef = ref(db, 'users/' + userId);
+
+    // Get the user's data from RTDB
+    const userSnapshot = await get(userRef);
 
     if (!userSnapshot.exists()) {
       return res.status(404).send({
@@ -91,9 +103,8 @@ export const getUserDevicesController = async (req, res) => {
       });
     }
 
-    // Retrieve the devices array from the user's document
-    const userData = userSnapshot.data();
-    const deviceRefs = userData.devices || []; // `devices` is an array of document references
+    const userData = userSnapshot.val();
+    const deviceRefs = userData.devices || [];  // Devices stored as an array in the user node
 
     if (deviceRefs.length === 0) {
       return res.status(200).send({
@@ -103,23 +114,23 @@ export const getUserDevicesController = async (req, res) => {
       });
     }
 
-    // Fetch the device data for each reference
-    const deviceDataPromises = deviceRefs.map(deviceRef => getDoc(deviceRef));
+    // Create an array of promises to fetch each device's data from RTDB
+    const deviceDataPromises = deviceRefs.map(deviceId => {
+      const deviceRef = ref(db, 'devices/' + deviceId);
+      return get(deviceRef);
+    });
+
+    // Fetch all device data in parallel
     const deviceSnapshots = await Promise.all(deviceDataPromises);
 
-    // Extract the device names (or other desired fields) from each document
+    // Extract device data from snapshots
     const devices = deviceSnapshots.map(snapshot => {
       if (snapshot.exists()) {
-        const deviceData = snapshot.data();
-        return {
-          id: snapshot.id,
-          ...deviceData, // Include all device data
-        };
+        return snapshot.val();  // Return device data from RTDB snapshot
       }
-      return null; // In case the device document doesn't exist
-    }).filter(device => device !== null); // Filter out any `null` values
+      return null;  // In case the device doesn't exist
+    }).filter(device => device !== null);  // Filter out any null values
 
-    // Send the response
     res.status(200).send({
       success: true,
       message: 'Devices retrieved successfully',
@@ -132,6 +143,60 @@ export const getUserDevicesController = async (req, res) => {
     res.status(500).send({
       success: false,
       message: 'Error retrieving devices',
+      error: error.message,
+    });
+  }
+};
+export const changeDeviceStateController = async (req, res) => {
+  try {
+    // Extract query parameters
+    const { deviceId, state } = req.query;
+
+    // Validate query parameters
+    if (!deviceId || typeof state === "undefined") {
+      return res.status(400).json({
+        success: false,
+        message: "Device ID and state are required as query parameters.",
+      });
+    }
+
+    // Parse and validate state (ensure it is 0 or 1)
+    const parsedState = parseInt(state, 10);
+    if (parsedState !== 0 && parsedState !== 1) {
+      return res.status(400).json({
+        success: false,
+        message: "State must be either 0 or 1.",
+      });
+    }
+
+    // Define the topic and payload
+    const topic = `/devices/${deviceId}/state`;
+    const payload = JSON.stringify({ state: parsedState }); // Serialize the state as JSON
+
+    // Publish the state change to the MQTT topic
+    mqttClient.publish(topic, payload, { qos: 1 }, (err) => {
+      if (err) {
+        console.error(`Error publishing to MQTT topic ${topic}:`, err);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to publish device state.",
+        });
+      }
+
+      console.log(`State ${parsedState} published to MQTT topic ${topic}`);
+
+      // Respond with success
+      res.status(200).json({
+        success: true,
+        message: `Device state changed successfully to ${parsedState}.`,
+      });
+    });
+  } catch (error) {
+    console.error("Error changing device state:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while changing device state.",
       error: error.message,
     });
   }
